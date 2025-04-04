@@ -1,0 +1,250 @@
+Implementing SOLID principles in PHP Object-Oriented Programming (OOP) ensures that your code is scalable, maintainable, and easy to understand.
+Here’s how each principle applies, with an example.
+
+---
+
+### **1. Single Responsibility Principle (SRP)**
+**A class should have only one reason to change.**
+
+✅ **Bad Example (Violating SRP)**  
+A `User` class handling both user data and email sending:
+```php
+class User {
+    public function saveToDatabase() {
+        // Save user to database
+    }
+
+    public function sendEmail() {
+        // Send email to user
+    }
+}
+```
+🔹 **Issue:** The class has two responsibilities—database operations and email sending.
+
+✅ **Good Example (Following SRP)**  
+Split responsibilities into separate classes:
+```php
+class User {
+    public function saveToDatabase() {
+        // Save user to database
+    }
+}
+
+class EmailService {
+    public function sendEmail() {
+        // Send email to user
+    }
+}
+```
+---
+
+### **2. Open/Closed Principle (OCP)**
+**Software entities should be open for extension but closed for modification.**
+
+✅ **Bad Example (Violating OCP)**  
+Modifying the `Discount` class whenever a new discount type is added:
+```php
+class Discount {
+    public function applyDiscount($type, $amount) {
+        if ($type == "percentage") {
+            return $amount * 0.9;
+        } elseif ($type == "fixed") {
+            return $amount - 10;
+        }
+    }
+}
+```
+🔹 **Issue:** Every new discount type requires modifying this class.
+
+✅ **Good Example (Following OCP)**  
+Use an interface to allow new discount types without modifying the existing class:
+```php
+interface DiscountStrategy {
+    public function apply($amount);
+}
+
+class PercentageDiscount implements DiscountStrategy {
+    public function apply($amount) {
+        return $amount * 0.9;
+    }
+}
+
+class FixedDiscount implements DiscountStrategy {
+    public function apply($amount) {
+        return $amount - 10;
+    }
+}
+```
+Now, we can add new discount types without modifying the existing ones.
+
+---
+
+### **3. Liskov Substitution Principle (LSP)**
+**Subclasses should be substitutable for their base classes without breaking functionality.**
+
+✅ **Bad Example (Violating LSP)**  
+A `Rectangle` class and a `Square` subclass that breaks expectations:
+```php
+class Rectangle {
+    protected $width;
+    protected $height;
+
+    public function setWidth($w) { $this->width = $w; }
+    public function setHeight($h) { $this->height = $h; }
+}
+
+class Square extends Rectangle {
+    public function setWidth($w) {
+        $this->width = $w;
+        $this->height = $w; // Violates LSP
+    }
+}
+```
+🔹 **Issue:** The `Square` class changes the behavior of `Rectangle`, breaking expectations.
+
+✅ **Good Example (Following LSP)**  
+Use an interface instead of inheritance:
+```php
+interface Shape {
+    public function area();
+}
+
+class Rectangle implements Shape {
+    protected $width, $height;
+
+    public function __construct($w, $h) {
+        $this->width = $w;
+        $this->height = $h;
+    }
+
+    public function area() {
+        return $this->width * $this->height;
+    }
+}
+
+class Square implements Shape {
+    protected $side;
+
+    public function __construct($side) {
+        $this->side = $side;
+    }
+
+    public function area() {
+        return $this->side * $this->side;
+    }
+}
+```
+Now, both classes respect the `Shape` contract and behave as expected.
+
+---
+
+### **4. Interface Segregation Principle (ISP)**
+**A class should not be forced to implement interfaces it does not use.**
+
+✅ **Bad Example (Violating ISP)**  
+A `Worker` interface forces all workers to implement `eat()`, even if they are robots.
+```php
+interface Worker {
+    public function work();
+    public function eat();
+}
+
+class HumanWorker implements Worker {
+    public function work() { /* Work logic */ }
+    public function eat() { /* Eating logic */ }
+}
+
+class RobotWorker implements Worker {
+    public function work() { /* Work logic */ }
+    public function eat() { throw new Exception("Robots don't eat!"); }
+}
+```
+🔹 **Issue:** `RobotWorker` is forced to implement `eat()`, which is irrelevant.
+
+✅ **Good Example (Following ISP)**  
+Split interfaces based on behavior:
+```php
+interface Workable {
+    public function work();
+}
+
+interface Eatable {
+    public function eat();
+}
+
+class HumanWorker implements Workable, Eatable {
+    public function work() { /* Work logic */ }
+    public function eat() { /* Eating logic */ }
+}
+
+class RobotWorker implements Workable {
+    public function work() { /* Work logic */ }
+}
+```
+Now, only relevant interfaces are implemented.
+
+---
+
+### **5. Dependency Inversion Principle (DIP)**
+**High-level modules should not depend on low-level modules. Both should depend on abstractions.**
+
+✅ **Bad Example (Violating DIP)**  
+A class directly depending on a concrete class:
+```php
+class MySQLDatabase {
+    public function connect() {
+        // MySQL connection logic
+    }
+}
+
+class UserRepository {
+    private $db;
+
+    public function __construct() {
+        $this->db = new MySQLDatabase(); // Tight coupling
+    }
+}
+```
+🔹 **Issue:** `UserRepository` is tightly coupled to `MySQLDatabase`. If we switch to PostgreSQL, we must modify this class.
+
+✅ **Good Example (Following DIP)**  
+Use an interface to decouple dependencies:
+```php
+interface DatabaseConnection {
+    public function connect();
+}
+
+class MySQLDatabase implements DatabaseConnection {
+    public function connect() {
+        // MySQL connection logic
+    }
+}
+
+class PostgreSQLDatabase implements DatabaseConnection {
+    public function connect() {
+        // PostgreSQL connection logic
+    }
+}
+
+class UserRepository {
+    private $db;
+
+    public function __construct(DatabaseConnection $db) {
+        $this->db = $db;
+    }
+}
+```
+Now, we can inject any database type (`MySQLDatabase`, `PostgreSQLDatabase`) without modifying `UserRepository`.
+
+---
+
+## **Conclusion**
+By applying SOLID principles, you make your PHP applications more flexible, maintainable, and scalable:
+
+1. **SRP** – Keep classes focused on a single responsibility.
+2. **OCP** – Allow easy extension without modifying existing code.
+3. **LSP** – Ensure subclasses can replace base classes without issues.
+4. **ISP** – Avoid forcing classes to implement unnecessary methods.
+5. **DIP** – Depend on abstractions, not concrete implementations.
+
+Would you like me to refine a specific example or implement it in a project structure? 🚀
