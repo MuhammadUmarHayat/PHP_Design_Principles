@@ -1,0 +1,162 @@
+### **Repository Design Pattern in PHP OOP**
+
+The **Repository Pattern** is a way to abstract database queries in an application, promoting separation of concerns by keeping data access logic separate from business logic. This pattern is useful in **Laravel**, **Symfony**, and **raw PHP projects**.
+
+---
+
+## **✅ Benefits of Repository Pattern**
+- **Decouples database logic from business logic**
+- **Easy to switch between databases (e.g., MySQL, PostgreSQL, MongoDB)**
+- **Promotes reusable and testable code**
+- **Enhances maintainability**
+
+---
+
+## **🛠️ Example: Implementing Repository Pattern in PHP OOP**
+
+We will implement a `UserRepository` for managing user-related database operations.
+
+### **1. Database Connection (Singleton Pattern)**
+We create a `Database` class for database connection.
+```php
+class Database {
+    private static $instance = null;
+    private $pdo;
+
+    private function __construct() {
+        try {
+            $this->pdo = new PDO("mysql:host=localhost;dbname=mydb", "root", "");
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die("Database Connection Failed: " . $e->getMessage());
+        }
+    }
+
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
+        return self::$instance;
+    }
+
+    public function getConnection() {
+        return $this->pdo;
+    }
+}
+```
+---
+### **2. User Model**
+The `User` model represents user data.
+```php
+class User {
+    public $id;
+    public $name;
+    public $email;
+
+    public function __construct($id, $name, $email) {
+        $this->id = $id;
+        $this->name = $name;
+        $this->email = $email;
+    }
+}
+```
+---
+### **3. User Repository Interface**
+Defines common database operations.
+```php
+interface UserRepositoryInterface {
+    public function getAll();
+    public function findById($id);
+    public function save(User $user);
+    public function update(User $user);
+    public function delete($id);
+}
+```
+---
+### **4. MySQL User Repository**
+Implements the repository interface using MySQL.
+```php
+class MySQLUserRepository implements UserRepositoryInterface {
+    private $pdo;
+
+    public function __construct() {
+        $this->pdo = Database::getInstance()->getConnection();
+    }
+
+    public function getAll() {
+        $stmt = $this->pdo->query("SELECT * FROM users");
+        return $stmt->fetchAll(PDO::FETCH_CLASS, 'User');
+    }
+
+    public function findById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetchObject('User');
+    }
+
+    public function save(User $user) {
+        $stmt = $this->pdo->prepare("INSERT INTO users (name, email) VALUES (?, ?)");
+        return $stmt->execute([$user->name, $user->email]);
+    }
+
+    public function update(User $user) {
+        $stmt = $this->pdo->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
+        return $stmt->execute([$user->name, $user->email, $user->id]);
+    }
+
+    public function delete($id) {
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+}
+```
+---
+### **5. Using the Repository in Business Logic**
+Now, let's use the repository in a service or controller.
+```php
+// Instantiate repository
+$userRepo = new MySQLUserRepository();
+
+// Fetch all users
+$users = $userRepo->getAll();
+foreach ($users as $user) {
+    echo "ID: {$user->id}, Name: {$user->name}, Email: {$user->email}\n";
+}
+
+// Add new user
+$newUser = new User(null, "John Doe", "john@example.com");
+$userRepo->save($newUser);
+echo "New user added successfully!\n";
+
+// Find user by ID
+$foundUser = $userRepo->findById(1);
+if ($foundUser) {
+    echo "User Found: {$foundUser->name}, Email: {$foundUser->email}\n";
+}
+
+// Update user
+$foundUser->name = "John Updated";
+$userRepo->update($foundUser);
+echo "User updated successfully!\n";
+
+// Delete user
+$userRepo->delete(1);
+echo "User deleted successfully!\n";
+```
+
+---
+
+## **✅ Key Takeaways**
+1. **Encapsulation** – The repository abstracts database logic.
+2. **Loose Coupling** – The `UserRepositoryInterface` makes it easy to switch databases (e.g., MongoDB).
+3. **Scalability** – Future modifications (e.g., caching) won’t affect business logic.
+4. **Testability** – You can mock `UserRepositoryInterface` for unit testing.
+
+---
+
+## **🛠️ Want to Extend It?**
+- Implement **MongoDBUserRepository** or **PostgreSQLUserRepository**.
+- Add **Logging or Caching** to reduce database load.
+- Use **Dependency Injection** in frameworks like Laravel.
+
+Let me know if you need further improvements! 🚀
