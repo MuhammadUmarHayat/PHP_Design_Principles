@@ -1,0 +1,94 @@
+### **Singleton Design Pattern in PHP OOP**
+The **Singleton Pattern** ensures that a class has only **one instance** and provides a **global access point** to that instance. It is commonly used for **database connections, configuration managers, and logging systems**.
+
+---
+
+## **✅ Benefits of Singleton Pattern**
+- Ensures a **single instance** of a class.
+- **Global access point** to shared resources.
+- **Prevents unnecessary object creation**, saving memory.
+- **Useful for managing database connections, caching, and logging.**
+
+---
+
+## **🛠️ Example: Implementing Singleton Pattern in PHP**
+We will create a **Singleton Database Connection** class using PDO.
+
+### **1. Singleton Database Connection**
+```php
+class Database {
+    private static $instance = null;
+    private $pdo;
+
+    // Private constructor prevents external instantiation
+    private function __construct() {
+        try {
+            $this->pdo = new PDO("mysql:host=localhost;dbname=mydb", "root", "");
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die("Database Connection Failed: " . $e->getMessage());
+        }
+    }
+
+    // Public method to get the single instance
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
+        return self::$instance;
+    }
+
+    // Method to get the PDO connection
+    public function getConnection() {
+        return $this->pdo;
+    }
+
+    // Prevent cloning
+    private function __clone() {}
+
+    // Prevent unserialization
+    public function __wakeup() {
+        throw new Exception("Cannot unserialize a singleton.");
+    }
+}
+```
+---
+
+### **2. Using the Singleton Database Class**
+```php
+// Get the single instance of Database
+$db1 = Database::getInstance();
+$db2 = Database::getInstance();
+
+// Check if both variables refer to the same instance
+if ($db1 === $db2) {
+    echo "Both variables hold the same instance of Database.";
+} else {
+    echo "Instances are different.";
+}
+
+// Fetch connection and run a query
+$conn = $db1->getConnection();
+$stmt = $conn->query("SELECT * FROM users");
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($users as $user) {
+    echo "User: {$user['name']} - Email: {$user['email']}\n";
+}
+```
+---
+
+## **✅ Key Takeaways**
+✔ **Ensures a single instance** of `Database`.  
+✔ **Prevents multiple database connections**, reducing resource usage.  
+✔ **Restricts object creation, cloning, and serialization.**  
+
+---
+
+## **💡 Where to Use Singleton Pattern?**
+✅ **Database Connection Handling**  
+✅ **Logging System** (Single log manager)  
+✅ **Configuration Management** (Application-wide settings)  
+✅ **Session Handling** (Single session instance)
+
+Would you like to extend it with **Lazy Loading** or **Dependency Injection** for frameworks like Laravel? 🚀
